@@ -1,5 +1,5 @@
 /*!
-* \file BW_CF.cc
+* \file BW_CF.c
 *
 * It sets up the logging system, creates a ControlThread object,
 * makes it run, and releases memory back when the main thread has ended.
@@ -37,37 +37,7 @@
 #include "sbas_satellite_correction.h"
 #include "sbas_ephemeris.h"
 #include "sbas_time.h"
-/**
 
-#include <GnssMetadata/Position.h>
-#include <stdio.h>
-#include <math.h>
-using namespace GnssMetadata;
-
-#if defined (LINUX)
-    #define _snprintf snprintf
-#endif
-
-/**
- * Returns true if is defined, meaning non-zero value.
- */
-bool Position::IsDefined() const
-{
-    return fabs(_latitude) > 0.0 || fabs(_longitude) > 0.0 || fabs(_height) > 0.0;
-}
-
-/**
- * Returns a string representation of the object.
- */
-String Position::toString( const String& sFormat ) const
-{
-	char buff[256];
-	const String& sfmt = (sFormat == DefaultFormat) ? "%0.7lf deg., %0.7lf deg., %0.3lf m" : sFormat;
-	_snprintf( buff, sizeof(buff), sfmt.c_str(), _latitude, _longitude, _height);
-	return String(buff);	
-}
-
-*/
 
 using google::LogMessage;
 
@@ -187,6 +157,18 @@ int main(int argc, char** argv)
     std::cout << "Total GNSS-SDR run time "
               << (static_cast<double>(total_time)) / 1000000.0
               << " [seconds]" << std::endl;
+
+    // retrieve the bandwidth of the signal
+    long long int bandwidth = 1000000.0/total_time;
+    std::cout << "Total Bandwidth "
+              << (static_cast<double>(bandwidth))  
+              << " [hertz]" << std::endl;
+
+    // finding the center frequency
+    long long int center_freq = mean(bandwidth);
+    std::cout << "Center Frequency  "
+              << (static_cast<double>(center_freq))  
+              << " [hertz]" << std::endl;
 
     google::ShutDownCommandLineFlags();
     std::cout << "GNSS-SDR program ended." << std::endl;
