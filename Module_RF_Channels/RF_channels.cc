@@ -40,7 +40,8 @@
 #include "sbas_satellite_correction.h"
 #include "sbas_ephemeris.h"
 #include "sbas_time.h"
-#include<GnssMetadata/Metadata.h>
+#include "math.h"
+#include <GnssMetadata/Metadata.h>
 
 /* !
 * Please add all the GnssMetadata/Metadata.h files from the following link:
