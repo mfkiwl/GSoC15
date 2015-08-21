@@ -107,7 +107,8 @@ int main(int argc, char** argv)
 
     std::unique_ptr<ControlThread> control_thread(new ControlThread());
     
-    long int i=1, _latitude[10000], _longitude[10000], _height[10000];
+    long int i=1;
+    long double _latitude[10000], _longitude[10000], _height[10000];
     long long int begin[10000], end[10000], active_time[10000];
 
     while(i!=0)
