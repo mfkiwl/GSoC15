@@ -1,5 +1,5 @@
 /*!
-* \file Number_of_Satellites.c
+* \file Number_of_Satellites.cc
 *
 * It locates all the satellites that could be tuned in by the receiver.
 * It sets up the logging system, creates a ControlThread object,

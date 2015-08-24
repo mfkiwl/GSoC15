@@ -1,7 +1,8 @@
 /*!
-* \file Number_of_Satellites.c
+* \file Sample_Resolution.cc
 *
 * It locates all the satellites that could be tuned in by the receiver.
+* The Sample Rate is also calculated.
 * It sets up the logging system, creates a ControlThread object,
 * makes it run, and releases memory back when the main thread has ended.
 * The gathered information can be used for auto-configuration of receiver.
@@ -108,7 +109,7 @@ int main(int argc, char** argv)
 
     std::unique_ptr<ControlThread> control_thread(new ControlThread());
     
-    long int i=1;
+    long int i=1; 
     long double _latitude[10000], _longitude[10000], _height[10000];
     long long int begin[10000], end[10000], active_time[10000];
 
@@ -172,6 +173,140 @@ int main(int argc, char** argv)
     // Displaying the total number of satellites found
     std::cout << "Total number of Satellites Located : " << n;
 
+    long double Sat_latitude, Sat_longitude, Sat_height;
+    int count = 0, Number_of_Bands = 0;
+
+    std::cin >> "Enter the latitude value of Satellite : " >> Sat_latitude >> std::endl;
+    std::cin >> "Enter the longitude value of Satellite : " >> Sat_longitude >> std::endl;	
+    std::cin >> "Enter the height value of Satellite : " >> Sat_height >> std::endl;
+
+    for (long int j = 1; j <= n; j++)
+    {    if (_lattitude(j) == Sat_latitude && _longitude(j) == Sat_longitude && _height(j) == Sat_height)
+	     count = 1;
+	 else 
+	     count = 0;
+    } 
+
+    if( count == 1)
+    {   //Define the Session.
+        Session sess("%d", j);
+        sess.Scenario("Example %d", j);
+        sess.Campaign("GNSS Metadata API Testing");
+        sess.Contact("CTTC");
+        sess.Position( Position( Sat_latitude, Sat_longitude, Sat_height));
+        sess.AddComment("This part tunes the receiver to the specified positions.");
+
+        //Define the System, Sources, and cluster.
+	System sys("A2300-1");
+	sys.BaseFrequency( Frequency( 4, Frequency::MHz));
+	sys.Equipment("ASR-2300");
+	sys.AddComment( "ASR-2300 configured with standard firmware and FPGA id=1, version=1.18.");
+
+	Cluster clstr("Antenna");
+
+	Source src( Source::Patch, Source::RHCP, "L1 C/A");
+	src.IdCluster("Antenna");
+
+	sys.AddSource( src);
+	sys.AddCluster(clstr);
+
+        // record startup time
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        long long int begin = tv.tv_sec * 1000000 + tv.tv_usec;
+
+        try
+        {
+                control_thread->run();
+        }
+        catch( boost::exception & e )
+        {
+                LOG(FATAL) << "Boost exception: " << boost::diagnostic_information(e);
+        }
+        catch(std::exception const&  ex)
+        {
+                LOG(FATAL) << "STD exception: " << ex.what();
+        }
+        // report the elapsed time
+        gettimeofday(&tv, NULL);
+        long long int end = tv.tv_sec * 1000000 + tv.tv_usec;
+        long long int total_time = end - begin;
+        std::cout << "Total GNSS-SDR run time "
+                  << (static_cast<double>(total_time)) / 1000000.0
+                  << " [seconds]" << std::endl;
+
+        // retrieve the bandwidth of the signal
+        long long int bandwidth = 1.0/total_time;
+        std::cout << "Total Bandwidth "
+                  << (static_cast<double>(bandwidth))  
+                  << " [MHz]" << std::endl;
+
+	// finding the center frequency
+	long long int center_freq = mean(bandwidth);
+        std::cout << "Center Frequency  "
+                  << (static_cast<double>(center_freq))  
+                  << " [MHz]" << std::endl;
+
+	////////////////////////////////
+	//Define Band 1 and L1 C/A Stream.
+	Band ch("L1External");
+	ch.CenterFrequency(Frequency( center_freq, Frequency::MHz));
+	ch.TranslatedFrequency(Frequency( 38400, Frequency::Hz));
+
+	Stream sm("L1ca");
+	sm.RateFactor(1);
+	sm.Quantization(8);
+	sm.Packedbits(16);
+	sm.Encoding("INT8");
+	sm.Format(Stream::IQ);
+	sm.Bands().push_back( ch);
+        Number_of_Bands = sizeof(sm.Bands().push_back( ch)) / sizeof(int);
+
+	////////////////////////////////
+	//Define the lane
+	Lump lump;
+	lump.Streams().push_back( sm);
+
+	Chunk chunk;
+	chunk.SizeWord(4);
+	chunk.CountWords(1);
+	chunk.Lumps().push_back(lump);
+
+	Block blk(256);
+	blk.Chunks().push_back(chunk);
+	
+	Lane lane("GPS SPS Data");
+	lane.Sessions().push_back( sess);
+	lane.Blocks().push_back(blk);
+	lane.AddBandSource(ch, src);
+	lane.Systems().push_back( sys.ToReference<System>());
+    }
+    else
+    {
+        std::cout << "No satellite detected in specified positions.";
+    }
+
+    std::cout << "Number of RF Channels =  "
+              << (static_cast<double>(Number_of_Bands))  
+              << " [MHz]" << std::endl;
+
+    // Sample Resolution
+
+    double Sample_Reso = msToSamples(total_time * power(10, -3), 2 * bandwidth, Number_of_Bands);
+
+    std::cout << "The Sample Resolution for this channel = " << Sample_Reso << std::endl;     
+
     google::ShutDownCommandLineFlags();
     std::cout << "GNSS-SDR program ended." << std::endl;
 }
+
+/*!
+* This part converts milliseconds to samples of buffer	
+* @param ms the tume in milliseconds
+* @return the size of the buffer in samples
+*/
+double msToSamples(double ms, double SampleReso, double channels)
+{
+    return (double)((long) ms) * SampleRseo * channels / 1000);
+}
+

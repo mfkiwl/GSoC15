@@ -1,5 +1,5 @@
 /*!
-* \file Number_of_Satellites.c
+* \file Sample_Rate.cc
 *
 * It locates all the satellites that could be tuned in by the receiver.
 * The Sample Rate is also calculated.

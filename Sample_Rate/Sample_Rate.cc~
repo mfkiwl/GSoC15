@@ -1,5 +1,5 @@
 /*!
-* \file Number_of_Satellites.c
+* \file Number_of_Sample_Rate.cc
 *
 * It locates all the satellites that could be tuned in by the receiver.
 * The Sample Rate is also calculated.
@@ -42,7 +42,7 @@
 #include "sbas_ephemeris.h"
 #include "sbas_time.h"
 #include "math.h"
-#include<GnssMetadata/Metadata.h>
+#include <GnssMetadata/Metadata.h>
 
 /* !
 * Please add all the GnssMetadata/Metadata.h files from the following link:
